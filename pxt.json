@@ -1,0 +1,39 @@
+{
+    "name": "Auto's Retro Collection",
+    "version": "0.0.0",
+    "files": [
+        "tilemap.g.jres",
+        "tilemap.g.ts",
+        "images.g.jres",
+        "images.g.ts",
+        "main.ts",
+        "donkeykong.ts"
+    ],
+    "supportedTargets": [
+        "arcade"
+    ],
+    "dependencies": {
+        "device": "*",
+        "Color Fading": "github:jwunderl/pxt-color#v0.2.3",
+        "arcade-timers": "github:microsoft/arcade-timers#v1.1.0"
+    },
+    "testDependencies": {},
+    "palette": [
+        "#000000",
+        "#ffffff",
+        "#a40000",
+        "#fc78fc",
+        "#c84c0c",
+        "#00a800",
+        "#9290ff",
+        "#800080",
+        "#6b6d00",
+        "#fc9838",
+        "#e40058",
+        "#fcbcb0",
+        "#80d010",
+        "#fcd8a8",
+        "#ca0c0c",
+        "#000000"
+    ]
+}
