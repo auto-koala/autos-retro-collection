@@ -7,6 +7,8 @@ namespace userconfig {
 // Custom sprite kinds
 namespace SpriteKind {
     export const UI = SpriteKind.create()
+    export const DkGirder = SpriteKind.create()
+    export const DkOilBarrel = SpriteKind.create()
 }
 
 // Enums
@@ -103,6 +105,10 @@ function mainMenu() {
     inputEnabled = true
 }
 
+function onGameUpdate() {
+    return
+}
+
 function onAButtonPressed() {
     if (!inputEnabled) {
         return
@@ -187,31 +193,39 @@ function onDownButtonPressed() {
     }
 }
 
+
+
 function returnToMainMenu() {
     // Init
+    game.onUpdate(onGameUpdate)
     controller.A.onEvent(ControllerButtonEvent.Pressed, onAButtonPressed)
     controller.B.onEvent(ControllerButtonEvent.Pressed, onBButtonPressed)
     controller.right.onEvent(ControllerButtonEvent.Pressed, onRightButtonPressed)
     controller.left.onEvent(ControllerButtonEvent.Pressed, onLeftButtonPressed)
     controller.up.onEvent(ControllerButtonEvent.Pressed, onUpButtonPressed)
     controller.down.onEvent(ControllerButtonEvent.Pressed, onDownButtonPressed)
+    controller.right.onEvent(ControllerButtonEvent.Released, null)
+    controller.left.onEvent(ControllerButtonEvent.Released, null)
     gameState = GameState.MainMenu
     mainMenu()
 }
 
 
 // Init
+game.onUpdate(onGameUpdate)
 controller.A.onEvent(ControllerButtonEvent.Pressed, onAButtonPressed)
 controller.B.onEvent(ControllerButtonEvent.Pressed, onBButtonPressed)
 controller.right.onEvent(ControllerButtonEvent.Pressed, onRightButtonPressed)
 controller.left.onEvent(ControllerButtonEvent.Pressed, onLeftButtonPressed)
 controller.up.onEvent(ControllerButtonEvent.Pressed, onUpButtonPressed)
 controller.down.onEvent(ControllerButtonEvent.Pressed, onDownButtonPressed)
+controller.right.onEvent(ControllerButtonEvent.Released, null)
+controller.left.onEvent(ControllerButtonEvent.Released, null)
 
-music.stopAllSounds()
-gameState = GameState.MainMenu
-mainMenuIntro()
-mainMenu()
+// music.stopAllSounds()
+// gameState = GameState.MainMenu
+// mainMenuIntro()
+// mainMenu()
 
-// dkInit()
-// dkMainMenu()
+gameState = null
+donkeykong.startGame()
