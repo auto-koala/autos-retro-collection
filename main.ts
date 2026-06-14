@@ -4,9 +4,10 @@ namespace userconfig {
     export const ARCADE_SCREEN_HEIGHT = 240
 }
 
-// Custom sprite kinds
+// Custom sprite kinds (these are global for the whole project)
 namespace SpriteKind {
     export const UI = SpriteKind.create()
+    export const SpriteImage = SpriteKind.create()
     export const DkGirder = SpriteKind.create()
     export const DkOilBarrel = SpriteKind.create()
 }
@@ -57,6 +58,10 @@ let gameSelected: number = 0
 function mainMenuIntro() {
     // Intro
     inputEnabled = false
+
+    // Intro animation with flashing marios
+    // This works by having a background screen with marios in different locations, which all have different colors
+    // It sets the whole pallete to black, and then chooses a random color from the pallete, which will gradually fade to white and back to black
     scene.setBackgroundImage(assets.image`IntroBg`)
     color.setPalette(color.Black)
     timer.background(function () {
@@ -84,9 +89,9 @@ function mainMenuIntro() {
     music.play(music.createSong(assets.song`MainMenuThemeIntro`), music.PlaybackMode.UntilDone)
 }
 
+// Main menu
 function mainMenu() {
     gameState = GameState.MainMenu
-    inputEnabled = true
 
     music.play(music.createSong(assets.song`MainMenuTheme`), music.PlaybackMode.LoopingInBackground)
     color.clearFadeEffect()
@@ -94,6 +99,7 @@ function mainMenu() {
     // Main menu init
     scene.setBackgroundImage(assets.image`MainMenuBg`)
 
+    // Create game icons
     let gameIcon: Sprite = sprites.create(gameIconImages[0][1], SpriteKind.UI)
     gameIcon.setPosition(76, 120)
     gameIconSprites[0] = gameIcon
@@ -109,17 +115,20 @@ function onGameUpdate() {
     return
 }
 
+// Run when A button is pressed
 function onAButtonPressed() {
     if (!inputEnabled) {
         return
     }
-    
+    // Select an icon to play
     if (gameState == GameState.MainMenu) {
         if (gameSelected == 0) {
             inputEnabled = false
+            // Fade to black animation
             music.stopAllSounds()
             music.play(music.melodyPlayable(music.zapped), music.PlaybackMode.InBackground)
             color.startFadeFromCurrent(color.Black, 1000)
+            // Clear menu and start game
             timer.after(2000, function () {
                 gameState = null
                 sprites.destroyAllSpritesOfKind(SpriteKind.UI)
@@ -136,12 +145,13 @@ function onBButtonPressed() {
     }
 }
 
+// Run when right button is pressed
 function onRightButtonPressed() {
-    //console.log("Right button pressed")
     if (!inputEnabled) {
         return
     }
 
+    // Select next icon
     if (gameState == GameState.MainMenu) {
         music.setVolume(255)
         music.play(menuSwitchGameSfx, music.PlaybackMode.InBackground)
@@ -150,16 +160,16 @@ function onRightButtonPressed() {
         gameIconSprites[gameSelected].setImage(gameIconImages[gameSelected][0])
         gameSelected = (gameSelected + 1) % 2
         gameIconSprites[gameSelected].setImage(gameIconImages[gameSelected][1])
-        //console.log(dkGameType)
     }
 }
 
+// Run when left button is pressed
 function onLeftButtonPressed() {
-    //console.log("Left button pressed")
     if (!inputEnabled) {
         return
     }
 
+    // Select previous icon
     if (gameState == GameState.MainMenu) {
         music.setVolume(255)
         music.play(menuSwitchGameSfx, music.PlaybackMode.InBackground)
@@ -172,7 +182,6 @@ function onLeftButtonPressed() {
 }
 
 function onUpButtonPressed() {
-    //console.log("Up button pressed")
     if (!inputEnabled) {
         return
     }
@@ -183,7 +192,6 @@ function onUpButtonPressed() {
 }
 
 function onDownButtonPressed() {
-    //console.log("Down button pressed")
     if (!inputEnabled) {
         return
     }
@@ -194,9 +202,9 @@ function onDownButtonPressed() {
 }
 
 
-
+// Returns from game to main menu
 function returnToMainMenu() {
-    // Init
+    // Bind events
     game.onUpdate(onGameUpdate)
     controller.A.onEvent(ControllerButtonEvent.Pressed, onAButtonPressed)
     controller.B.onEvent(ControllerButtonEvent.Pressed, onBButtonPressed)
@@ -206,12 +214,16 @@ function returnToMainMenu() {
     controller.down.onEvent(ControllerButtonEvent.Pressed, onDownButtonPressed)
     controller.right.onEvent(ControllerButtonEvent.Released, null)
     controller.left.onEvent(ControllerButtonEvent.Released, null)
+
+    // Load main menu
     gameState = GameState.MainMenu
     mainMenu()
 }
 
 
 // Init
+
+// Bind events
 game.onUpdate(onGameUpdate)
 controller.A.onEvent(ControllerButtonEvent.Pressed, onAButtonPressed)
 controller.B.onEvent(ControllerButtonEvent.Pressed, onBButtonPressed)
@@ -222,7 +234,9 @@ controller.down.onEvent(ControllerButtonEvent.Pressed, onDownButtonPressed)
 controller.right.onEvent(ControllerButtonEvent.Released, null)
 controller.left.onEvent(ControllerButtonEvent.Released, null)
 
-// music.stopAllSounds()
+music.stopAllSounds()
+
+// Load main menu
 // gameState = GameState.MainMenu
 // mainMenuIntro()
 // mainMenu()

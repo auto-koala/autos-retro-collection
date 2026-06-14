@@ -1,9 +1,4 @@
 namespace donkeykong {
-    // Custom sprite kinds
-    // namespace SpriteKind {
-    //     export const UI = SpriteKind.create()
-    // }
-
     // Enums
     enum GameState {
         MainMenu,
@@ -29,6 +24,7 @@ namespace donkeykong {
         Right
     }
 
+
     // Initialise variables
 
     // Control
@@ -39,16 +35,17 @@ namespace donkeykong {
 
     // Player
     let playerSprite: Sprite = null
+    let playerSpriteImg: Sprite = null
     let playerAnimState: number = AnimState.Idle
     let playerDirection: number = Direction.Right
     let playerSpeed: number = 30
-    let playerJumpForce: number = 100
+    let playerJumpForce: number = 75
     let gravityStrength: number = 200
     let playerIsInAir: boolean = false
     let isClimbing: boolean = false
 
     // Obstacles
-    let girders: Sprite[] = []
+    let girders: Sprite = null
 
     // Color
     let defaultPallete: color.Palette = color.hexArrayToPalette([
@@ -72,11 +69,10 @@ namespace donkeykong {
 
     // Sounds
 
+
     // Main menu
     let menuCursor: Sprite = null
     let gameType: number = 0
-
-
 
 
     // Snaps sprites to 8x8 grid
@@ -97,82 +93,115 @@ namespace donkeykong {
 
     }
 
+    // Main menu
     function mainMenu() {
         gameState = GameState.MainMenu
         inputEnabled = true
         
+        // Load menu assets
         scene.setBackgroundImage(assets.image`DkMenuBg`)
         music.play(music.createSong(assets.song`DkMenuTheme`), music.PlaybackMode.LoopingInBackground)
         menuCursor = sprites.create(assets.image`DkMenuCursor`, SpriteKind.UI)
         snapToGrid(menuCursor, Corner.TopLeft, 7, 16)
     }
 
+    // Loads the game
     function loadGame() {
         inputEnabled = false
         gameState = GameState.Gameplay
 
         scene.setBackgroundColor(15)
 
-        playerSprite = sprites.create(assets.image`DkJumpman`, SpriteKind.Player)
-        snapToGrid(playerSprite, Corner.BottomLeft, 6, 26)
 
+        // Create oil barrel
         let oilBarrel: Sprite = sprites.create(assets.image`DkOilBarrel`, SpriteKind.DkOilBarrel)
         snapToGrid(oilBarrel, Corner.BottomLeft, 4, 26)
 
-        let girder: Sprite = sprites.create(assets.image`DkGirder0`, SpriteKind.DkGirder)
-        snapToGrid(girder, Corner.BottomLeft, 1, 27)
-        girders[0] = girder
+        // Create girders
+        let girdersImg: Sprite = sprites.create(assets.image`DkGirders`, SpriteKind.SpriteImage)
+        snapToGrid(girdersImg, Corner.BottomLeft, 1, 27)
 
+        girders = sprites.create(assets.image`DkGirdersHitbox`, SpriteKind.DkGirder)
+        girders.setFlag(SpriteFlag.Invisible, true)
+        snapToGrid(girders, Corner.BottomLeft, 1, 27)
+
+        // Create player
+        playerSpriteImg = sprites.create(assets.image`DkJumpman`, SpriteKind.SpriteImage)
+
+        playerSprite = sprites.create(assets.image`DkJumpmanHitbox`, SpriteKind.Player)
+        playerSprite.setFlag(SpriteFlag.Invisible, true)
+        snapToGrid(playerSprite, Corner.BottomLeft, 6, 26)
+        
+        playerSpriteImg.x = playerSprite.x
+        playerSpriteImg.bottom = playerSprite.bottom
+
+        // Play opening music
+        music.setVolume(128)
         music.play(music.createSong(assets.song`DkLevelStartTheme`), music.PlaybackMode.UntilDone)
         pause(100)
         music.setVolume(255)
         music.play(music.createSong(assets.song`DkLevelTheme1`), music.PlaybackMode.LoopingInBackground)
         music.setVolume(128)
+
+        // Enable player input
         inputEnabled = true
     }
 
+    // Handles all player animations
     function updatePlayerAnimations(anim: number) {
+        // Prevents same animation being reactivated
+        if (anim == playerAnimState) {
+            return
+        }
+
         if (anim == AnimState.Idle) {
+            // Transition from jumping to landing
             if (playerAnimState == AnimState.Jumping) {
                 if (playerDirection == Direction.Right) {
-                    animation.runImageAnimation(playerSprite, assets.animation`DkJumpmanLandRightAnim`, 150, false)
+                    animation.runImageAnimation(playerSpriteImg, assets.animation`DkJumpmanLandRightAnim`, 150, false)
                 } else {
-                    animation.runImageAnimation(playerSprite, assets.animation`DkJumpmanLandLeftAnim`, 150, false)
+                    animation.runImageAnimation(playerSpriteImg, assets.animation`DkJumpmanLandLeftAnim`, 150, false)
                 }
             } else {
-                animation.stopAnimation(animation.AnimationTypes.ImageAnimation, playerSprite)
+                animation.stopAnimation(animation.AnimationTypes.ImageAnimation, playerSpriteImg)
             }
             playerAnimState = AnimState.Idle
+            
         } else if (anim == AnimState.WalkRight) {
             playerAnimState = AnimState.WalkRight
             playerDirection = Direction.Right
-            animation.runImageAnimation(playerSprite, assets.animation`DkJumpmanWalkRightAnim`, 70, true)
+            animation.runImageAnimation(playerSpriteImg, assets.animation`DkJumpmanWalkRightAnim`, 70, true)
+
         } else if (anim == AnimState.WalkLeft) {
             playerAnimState = AnimState.WalkLeft
             playerDirection = Direction.Left
-            animation.runImageAnimation(playerSprite, assets.animation`DkJumpmanWalkLeftAnim`, 70, true)
+            animation.runImageAnimation(playerSpriteImg, assets.animation`DkJumpmanWalkLeftAnim`, 70, true)
+
         } else if (anim == AnimState.Jumping) {
             playerAnimState = AnimState.Jumping
-            animation.stopAnimation(animation.AnimationTypes.ImageAnimation, playerSprite)
+            animation.stopAnimation(animation.AnimationTypes.ImageAnimation, playerSpriteImg)
             if (playerDirection == Direction.Right) {
-                playerSprite.setImage(assets.image`DkJumpmanJumpRight`)
+                playerSpriteImg.setImage(assets.image`DkJumpmanJumpRight`)
             } else {
-                playerSprite.setImage(assets.image`DkJumpmanJumpLeft`)
+                playerSpriteImg.setImage(assets.image`DkJumpmanJumpLeft`)
             }
 
         }
     }
 
+    // Game loop
     function onGameUpdate() {
         if (gameState == GameState.Gameplay) {
             if (playerIsInAir) {
-                if (playerSprite.overlapsWith(girders[0])) {
+                // Player lands
+                if (playerSprite.overlapsWith(girders)) {
                     playerSprite.ay = 0
                     playerSprite.vy = 0
                     playerSprite.vx = 0
                     playerSprite.y += 1
                     playerSprite.y = Math.round(playerSprite.y)
-                    while (playerSprite.overlapsWith(girders[0])) {
+                    // Prevents player getting stuck in girders
+                    while (playerSprite.overlapsWith(girders)) {
                         playerSprite.y -= 1
                     }
                     updatePlayerAnimations(AnimState.Idle)
@@ -181,45 +210,31 @@ namespace donkeykong {
             } else {
                 // Collision with girders
                 playerSprite.y += 1
-                while (playerSprite.overlapsWith(girders[0])) {
+                while (playerSprite.overlapsWith(girders)) {
                     playerSprite.y -= 1
                 }
 
-                // Player Walking
-                if ((playerAnimState == AnimState.WalkRight) && (!controller.right.isPressed()) && inputEnabled) {
-                    if (controller.left.isPressed()) {
-                        console.log("a")
-                        playerSprite.vx = -playerSpeed
-                        updatePlayerAnimations(AnimState.WalkLeft)
-                    } else {
-                        playerSprite.vx = 0
-                        updatePlayerAnimations(AnimState.Idle)
-                    }
-                } else if ((playerAnimState == AnimState.WalkLeft) && (!controller.left.isPressed()) && inputEnabled) {
-                    if (controller.right.isPressed()) {
-                        playerSprite.vx = playerSpeed
-                        updatePlayerAnimations(AnimState.WalkRight)
-                    } else {
-                        playerSprite.vx = 0
-                        updatePlayerAnimations(AnimState.Idle)
-                    }
-                } else if ((playerAnimState == AnimState.Idle) && inputEnabled) {
-                    if (controller.right.isPressed()) {
-                        playerSprite.vx = playerSpeed
-                        updatePlayerAnimations(AnimState.WalkRight)
-                    } else if (controller.left.isPressed()) {
-                        playerSprite.vx = -playerSpeed
-                        updatePlayerAnimations(AnimState.WalkLeft)
-                    }
+                // Player walking
+                if (controller.right.isPressed() && inputEnabled) {
+                    playerSprite.vx = playerSpeed
+                    updatePlayerAnimations(AnimState.WalkRight)
+                } else if (controller.left.isPressed() && inputEnabled) {
+                    playerSprite.vx = -playerSpeed
+                    updatePlayerAnimations(AnimState.WalkLeft)
+                } else {
+                    playerSprite.vx = 0
+                    updatePlayerAnimations(AnimState.Idle)
                 }
-
-
-
             }
+
+            // Update player image
+            playerSpriteImg.x = playerSprite.x
+            playerSpriteImg.bottom = playerSprite.bottom
 
         }
     }
 
+    // Generates footstep sound when player is walking
     function walkSound() {
         if ((playerAnimState == AnimState.WalkLeft) || (playerAnimState == AnimState.WalkRight)) {
             music.setVolume(255)
@@ -228,21 +243,25 @@ namespace donkeykong {
         }
     }
 
+    // Runs when the A button is pressed
     function onAButtonPressed() {
-        //console.log("A button pressed")
         if (!inputEnabled) {
             return
         }
         
+        // Selects a game mode and loads game
         if (gameState == GameState.MainMenu) {
-            console.log("Main menu")
             inputEnabled = false
             music.stopAllSounds()
             music.play(music.createSong(assets.song`DkMenuStartTheme`), music.PlaybackMode.UntilDone)
+            // Clears menu
             sprites.destroy(menuCursor)
             scene.setBackgroundImage(assets.image`EmptyBg`)
             pause(100)
+            // Loads game
             loadGame()
+        
+        // Player jump
         } else if (gameState == GameState.Gameplay) {
             if (!playerIsInAir) {
                 playerIsInAir = true
@@ -256,12 +275,12 @@ namespace donkeykong {
         }
     }
     
+    // Runs when the B button is pressed
     function onBButtonPressed() {
-        //console.log("B button pressed")
         if (!inputEnabled) {
             return
         }
-
+        // Return to main menu
         if (gameState == GameState.MainMenu) {
             inputEnabled = false
             music.stopAllSounds()
@@ -272,21 +291,28 @@ namespace donkeykong {
                 sprites.destroyAllSpritesOfKind(SpriteKind.UI)
                 scene.setBackgroundImage(assets.image`EmptyBg`)
                 returnToMainMenu()
-            }) 
+            })
+
+        // Enable debug mode
         } else if (gameState == GameState.Gameplay) {
             if (debugMode) {
-                if (gridEnabled) {
-                    scene.setBackgroundImage(assets.image`EmptyBg`)
-                } else {
-                    scene.setBackgroundImage(assets.image`GridBg`)
-                }
                 gridEnabled = !gridEnabled
+                // Show hitboxes
+                playerSprite.setFlag(SpriteFlag.Invisible, !gridEnabled)
+                girders.setFlag(SpriteFlag.Invisible, !gridEnabled)
+
+                if (gridEnabled) {
+                    scene.setBackgroundImage(assets.image`GridBg`)  // Show grid
+                    playerJumpForce *= 1.5  // Increase player jump force
+                } else {
+                    scene.setBackgroundImage(assets.image`EmptyBg`)
+                    playerJumpForce /= 1.5
+                }
             }
         }
     }
 
     function onRightButtonPressed() {
-        //console.log("Right button pressed")
         if (!inputEnabled) {
             return
         }
@@ -299,7 +325,6 @@ namespace donkeykong {
     }
 
     function onLeftButtonPressed() {
-        //console.log("Left button pressed")
         if (!inputEnabled) {
             return
         }
@@ -311,28 +336,29 @@ namespace donkeykong {
         }
     }
 
+    
+    // Runs when up button is pressed
     function onUpButtonPressed() {
-        //console.log("Up button pressed")
         if (!inputEnabled) {
             return
         }
 
+        // Switch game type
         if (gameState == GameState.MainMenu) {
             gameType = (gameType + 3) % 4
-            //console.log(gameType)
             snapToGrid(menuCursor, Corner.TopLeft, 7, 16 + gameType * 2)
         }
     }
 
+        // Runs when down button is pressed
     function onDownButtonPressed() {
-        //console.log("Down button pressed")
         if (!inputEnabled) {
             return
         }
 
+        // Switch game type
         if (gameState == GameState.MainMenu) {
             gameType = (gameType + 1) % 4
-            //console.log(gameType)
             snapToGrid(menuCursor, Corner.TopLeft, 7, 16 + gameType * 2)
         }
     }
@@ -349,7 +375,9 @@ namespace donkeykong {
         }
     }
 
+    // Starts game
     export function startGame() {
+        // Bind events
         game.onUpdate(onGameUpdate)
         game.onUpdateInterval(200, walkSound)
         controller.A.onEvent(ControllerButtonEvent.Pressed, onAButtonPressed)
@@ -366,9 +394,9 @@ namespace donkeykong {
         
         music.stopAllSounds()
         color.setPalette(defaultPallete)
-        gameState = GameState.MainMenu
-        mainMenu()
+        // gameState = GameState.MainMenu
+        // mainMenu()
 
-        //loadGame()
+        loadGame()
     }
 }
